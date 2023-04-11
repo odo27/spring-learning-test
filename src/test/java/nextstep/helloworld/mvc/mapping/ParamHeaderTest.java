@@ -66,4 +66,16 @@ public class ParamHeaderTest {
                 .statusCode(HttpStatus.OK.value())
                 .body(is("hi"));
     }
+
+    @DisplayName("Parameter Header - Headers")
+    @Test
+    void messageForHeader2() {
+        RestAssured.given().log().all()
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .header("HEADER", "hi")
+                .when().get("/param-header/message?name=hello")
+                .then().log().all()
+                .statusCode(HttpStatus.OK.value())
+                .body(is("hello"));
+    }
 }

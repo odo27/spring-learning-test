@@ -14,15 +14,13 @@ public class ExceptionsController {
 
     @GetMapping("/hello")
     public ResponseEntity exceptionHandler() {
+
         throw new CustomException();
     }
 
     @GetMapping("/hi")
     public ResponseEntity exceptionHandler2() {
-        throw new HelloException();
-    }
 
-    public ResponseEntity<String> handle() {
-        return ResponseEntity.badRequest().body("CustomException");
+        throw new HelloException();
     }
 }
