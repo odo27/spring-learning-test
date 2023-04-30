@@ -8,6 +8,7 @@ import nextstep.helloworld.auth.dto.TokenResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -76,9 +77,7 @@ public class AuthController {
      * }
      */
     @PostMapping("/login/token")
-    public ResponseEntity tokenLogin() {
-        // TODO: TokenRequest 값을 메서드 파라미터로 받아오기 (hint: @RequestBody)
-        TokenRequest tokenRequest = null;
+    public ResponseEntity tokenLogin(@RequestBody TokenRequest tokenRequest) {
         TokenResponse tokenResponse = authService.createToken(tokenRequest);
         return ResponseEntity.ok().body(tokenResponse);
     }
@@ -92,8 +91,11 @@ public class AuthController {
      */
     @GetMapping("/members/you")
     public ResponseEntity findYourInfo(HttpServletRequest request) {
-        // TODO: authorization 헤더의 Bearer 값을 추출하기
+        String authorization = request.getHeader("Authorization");
         String token = "";
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            token = authorization.substring("Bearer ".length());
+        }
         MemberResponse member = authService.findMemberByToken(token);
         return ResponseEntity.ok().body(member);
     }
