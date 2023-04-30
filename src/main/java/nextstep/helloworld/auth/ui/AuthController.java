@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @RestController
 public class AuthController {
@@ -105,8 +107,14 @@ public class AuthController {
      */
     @GetMapping("/members/my")
     public ResponseEntity findMyInfo(HttpServletRequest request) {
-        // TODO: authorization 헤더의 Basic 값을 추출하기
+        String authorization = request.getHeader("Authorization");
         String email = "";
+        if (authorization != null && authorization.startsWith("Basic ")) {
+            String credentials = authorization.substring("Basic ".length());
+            String decodedCredentials = new String(Base64.getDecoder().decode(credentials), StandardCharsets.UTF_8);
+            String[] split = decodedCredentials.split(":");
+            email = split[0];
+        }
         MemberResponse member = authService.findMember(email);
         return ResponseEntity.ok().body(member);
     }
