@@ -2,9 +2,13 @@ package nextstep.helloworld.auth.ui;
 
 import nextstep.helloworld.auth.application.AuthService;
 import nextstep.helloworld.auth.application.AuthorizationException;
+import nextstep.helloworld.auth.dto.AuthInfo;
 import nextstep.helloworld.auth.dto.MemberResponse;
 import nextstep.helloworld.auth.dto.TokenRequest;
 import nextstep.helloworld.auth.dto.TokenResponse;
+import nextstep.helloworld.auth.infrastructure.AuthorizationExtractor;
+import nextstep.helloworld.auth.infrastructure.BasicAuthorizationExtractor;
+import nextstep.helloworld.auth.infrastructure.BearerAuthorizationExtractor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +27,8 @@ public class AuthController {
     private static final String SESSION_KEY = "USER";
     private static final String USERNAME_FIELD = "email";
     private static final String PASSWORD_FIELD = "password";
+    private AuthorizationExtractor<String> bearerAuthorizationExtractor = new BearerAuthorizationExtractor();
+    private AuthorizationExtractor<AuthInfo> basicAuthorizationExtractor = new BasicAuthorizationExtractor();
     private AuthService authService;
 
 
@@ -94,11 +100,7 @@ public class AuthController {
      */
     @GetMapping("/members/you")
     public ResponseEntity findYourInfo(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        String token = "";
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            token = authorization.substring("Bearer ".length());
-        }
+        String token = bearerAuthorizationExtractor.extract(request);
         MemberResponse member = authService.findMemberByToken(token);
         return ResponseEntity.ok().body(member);
     }
@@ -112,14 +114,14 @@ public class AuthController {
      */
     @GetMapping("/members/my")
     public ResponseEntity findMyInfo(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        String email = "";
-        if (authorization != null && authorization.startsWith("Basic ")) {
-            String credentials = authorization.substring("Basic ".length());
-            String decodedCredentials = new String(Base64.getDecoder().decode(credentials), StandardCharsets.UTF_8);
-            String[] split = decodedCredentials.split(":");
-            email = split[0];
+        AuthInfo authInfo = basicAuthorizationExtractor.extract(request);
+        String email = authInfo.getEmail();
+        String password = authInfo.getPassword();
+
+        if (authService.checkInvalidLogin(email, password)) {
+            throw new AuthorizationException();
         }
+
         MemberResponse member = authService.findMember(email);
         return ResponseEntity.ok().body(member);
     }
